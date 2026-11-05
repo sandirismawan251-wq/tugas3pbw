@@ -1,0 +1,60 @@
+<template id="tpl-order">
+  <div>
+    <div class="page-heading">
+      <div>
+        <p class="eyebrow">LAYANAN PEMESANAN</p>
+        <h1>Buat pesanan<span class="heading-dot">.</span></h1>
+        <p class="muted">Pilih paket bahan ajar dan lengkapi data delivery order.</p>
+      </div>
+    </div>
+    <div class="order-layout">
+      <section class="panel form-panel">
+        <div class="panel-heading">
+          <div><h2>Informasi pemesan</h2><p class="muted">Lengkapi semua data yang bertanda wajib.</p></div>
+        </div>
+        <form @submit.prevent="submitOrder" novalidate>
+          <div class="form-grid">
+            <label class="form-field"><span>NIM <b>*</b></span><input v-model.trim="draft.nim" inputmode="numeric" autocomplete="off" placeholder="Masukkan NIM" required></label>
+            <label class="form-field"><span>Nama mahasiswa <b>*</b></span><input v-model.trim="draft.nama" autocomplete="name" placeholder="Nama lengkap" required></label>
+            <label class="form-field">
+              <span>Paket bahan ajar <b>*</b></span>
+              <select v-model="draft.paketCode" required>
+                <option value="" disabled>Pilih paket bahan ajar</option>
+                <option v-for="item in paketList" :key="item.kode" :value="item.kode">{{ item.kode }} — {{ item.nama }}</option>
+              </select>
+            </label>
+            <label class="form-field">
+              <span>Jenis pengiriman <b>*</b></span>
+              <select v-model="draft.pengirimanCode" required>
+                <option value="" disabled>Pilih pengiriman</option>
+                <option v-for="item in pengirimanList" :key="item.kode" :value="item.kode">{{ item.nama }}</option>
+              </select>
+            </label>
+            <label class="form-field"><span>Tanggal kirim <b>*</b></span><input v-model="draft.tanggalKirim" type="date" required></label>
+          </div>
+          <div v-if="formError" class="notice notice-error" role="alert">{{ formError }}</div>
+          <div v-if="message" class="notice" :class="'notice-' + messageType" role="status">{{ message }}</div>
+          <div class="form-actions">
+            <span class="muted"><b>*</b> Wajib diisi</span>
+            <button class="button button-primary" type="submit">Buat delivery order <span>→</span></button>
+          </div>
+        </form>
+      </section>
+      <aside class="panel order-summary">
+        <p class="eyebrow">RINGKASAN</p><h2>Detail paket</h2>
+        <div v-if="selectedPacket">
+          <p class="summary-package-name">{{ selectedPacket.nama }}</p>
+          <p class="summary-code">{{ selectedPacket.kode }}</p>
+          <ul class="packet-items">
+            <li v-for="code in selectedPacket.isi" :key="code">
+              <span>{{ code }}</span><strong>{{ titleFor(code) }}</strong>
+            </li>
+          </ul>
+          <div class="summary-total"><span>Total harga</span><strong>{{ selectedPacket.harga | currency }}</strong></div>
+        </div>
+        <div v-else class="empty-state">Pilih paket untuk melihat ringkasan.</div>
+        <div class="summary-footnote">Nomor DO dibuat otomatis setelah pesanan berhasil disimpan.</div>
+      </aside>
+    </div>
+  </div>
+</template>

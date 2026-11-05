@@ -1,0 +1,80 @@
+<template id="tpl-tracking">
+  <div>
+    <div class="page-heading">
+      <div>
+        <p class="eyebrow">STATUS PENGIRIMAN</p>
+        <h1>Tracking DO<span class="heading-dot">.</span></h1>
+        <p class="muted">Lacak status delivery order dengan nomor DO, NIM, atau nama pemesan.</p>
+      </div>
+    </div>
+    <form class="panel tracking-search-panel" @submit.prevent="submitTrackingSearch">
+      <label class="tracking-search">
+        <span aria-hidden="true">⌕</span>
+        <input v-model.trim="query" type="search" placeholder="Contoh: DO2026-001 atau NIM" @keyup.esc="clearTrackingSearch">
+        <button v-if="query" class="clear-button" type="button" aria-label="Hapus pencarian" @click="clearTrackingSearch">×</button>
+      </label>
+      <button class="button button-primary" type="submit">Cari pengiriman</button>
+      <span class="search-hint">Tekan Enter untuk mencari atau Esc untuk menghapus.</span>
+    </form>
+    <p v-if="trackingMessage" class="search-feedback" role="status">{{ trackingMessage }}</p>
+    <div v-if="query && trackingMatches.length" class="tracking-results">
+      <button v-for="record in trackingMatches" :key="record.nomorDO" class="tracking-result" :class="{ selected: selectedTracking && selectedTracking.nomorDO === record.nomorDO }" type="button" @click="selectTracking(record)">
+        <span class="result-icon">⌖</span>
+        <span class="result-main"><strong>{{ record.nomorDO }}</strong><small>{{ record.nama }} · NIM {{ record.nim }}</small></span>
+        <ba-status-label :status="record.status"></ba-status-label>
+      </button>
+    </div>
+    <section v-if="selectedTracking" class="panel tracking-detail">
+      <div class="tracking-detail-heading">
+        <div><p class="eyebrow">DELIVERY ORDER</p><h2>{{ selectedTracking.nomorDO }}</h2><p class="muted">Dikirim {{ selectedTracking.tanggalKirim | date }}</p></div>
+        <ba-status-label :status="selectedTracking.status"></ba-status-label>
+      </div>
+      <div class="detail-grid">
+        <div><span>NAMA PEMESAN</span><strong>{{ selectedTracking.nama }}</strong></div>
+        <div><span>NIM</span><strong>{{ selectedTracking.nim }}</strong></div>
+        <div><span>EKSPEDISI</span><strong>{{ selectedTracking.ekspedisi }}</strong></div>
+        <div><span>PAKET</span><strong>{{ packetName(selectedTracking.paket) }}</strong></div>
+        <div class="detail-total"><span>TOTAL PEMBAYARAN</span><strong>{{ selectedTracking.total | currency }}</strong></div>
+      </div>
+      <div class="timeline-heading">
+        <div><h3>Riwayat perjalanan</h3><p class="muted">Pembaruan status pengiriman</p></div>
+        <span>{{ selectedTracking.perjalanan.length }} pembaruan</span>
+      </div>
+      <ol v-if="selectedTracking.perjalanan.length" class="timeline">
+        <li v-for="(journey, index) in selectedTracking.perjalanan" :key="journey.waktu + '-' + index">
+          <span class="timeline-marker" :class="{ latest: index === selectedTracking.perjalanan.length - 1 }"></span>
+          <div><strong>{{ journey.keterangan }}</strong><time>{{ journey.waktu }}</time></div>
+        </li>
+      </ol>
+      <div v-else class="empty-state">Belum ada pembaruan perjalanan untuk pesanan ini.</div>
+      <form class="progress-form" @submit.prevent="addProgress">
+        <h3>Tambah pembaruan perjalanan</h3>
+        <div class="form-grid">
+          <label class="form-field">
+            <span>Status pengiriman</span>
+            <select v-model="progressDraft.status"><option>Dalam Perjalanan</option><option>Terkirim</option><option>Dibatalkan</option></select>
+          </label>
+          <label class="form-field"><span>Keterangan perjalanan <b>*</b></span><input v-model.trim="progressDraft.keterangan" placeholder="Contoh: Paket tiba di kantor cabang" required></label>
+        </div>
+        <div v-if="progressError" class="notice notice-error" role="alert">{{ progressError }}</div>
+        <div class="form-actions"><button class="button button-secondary" type="submit">Simpan pembaruan</button></div>
+      </form>
+    </section>
+    <div v-else-if="query && searchSubmitted && !trackingMatches.length" class="panel empty-search">
+      <span class="empty-search-icon">⌕</span><h2>Pesanan tidak ditemukan</h2>
+      <p class="muted">Periksa kembali nomor DO, NIM, atau nama yang Anda masukkan.</p>
+    </div>
+    <section v-if="!query && !selectedTracking" class="panel recent-orders">
+      <div class="panel-heading">
+        <div><h2>Pengiriman terbaru</h2><p class="muted">Pilih delivery order untuk melihat detailnya.</p></div>
+        <span class="count-pill">{{ records.length }} data</span>
+      </div>
+      <button v-for="record in records.slice(0, 5)" :key="record.nomorDO" class="recent-order" type="button" @click="selectTracking(record)">
+        <span class="result-icon">⌖</span>
+        <span class="result-main"><strong>{{ record.nomorDO }}</strong><small>{{ record.nama }} · {{ record.paket }}</small></span>
+        <ba-status-label :status="record.status"></ba-status-label><span class="row-arrow">→</span>
+      </button>
+      <div v-if="!records.length" class="empty-state">Belum ada delivery order yang tercatat.</div>
+    </section>
+  </div>
+</template>

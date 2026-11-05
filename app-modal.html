@@ -1,0 +1,11 @@
+<template id="tpl-app-modal">
+  <div class="modal-backdrop" tabindex="-1" @click.self="$emit('close')" @keyup.esc="$emit('close')">
+    <section class="modal-card" role="dialog" aria-modal="true" :aria-label="title">
+      <header class="modal-heading">
+        <h2>{{ title }}</h2>
+        <button class="modal-close" type="button" aria-label="Tutup" @click="$emit('close')">×</button>
+      </header>
+      <div class="modal-body"><slot></slot></div>
+    </section>
+  </div>
+</template>

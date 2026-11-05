@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f7fb">
+  <title>SITTA | Sistem Informasi Bahan Ajar</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="app" v-cloak>
+    <header class="topbar">
+      <a class="brand" href="#" @click.prevent="activeTab = 'dashboard'">
+        <span class="brand-mark">UT</span>
+        <span>
+          <strong>SITTA</strong>
+          <small>Sistem Informasi Bahan Ajar</small>
+        </span>
+      </a>
+      <div class="topbar-note"><span class="online-dot"></span> Layanan akademik</div>
+    </header>
+
+    <div class="layout">
+      <aside class="sidebar">
+        <p class="nav-caption">MENU UTAMA</p>
+        <button class="nav-item" :class="{ active: activeTab === 'dashboard' }" @click="activeTab = 'dashboard'">
+          <span class="nav-icon">⌂</span> Ringkasan
+        </button>
+        <button class="nav-item" :class="{ active: activeTab === 'stock' }" @click="activeTab = 'stock'">
+          <span class="nav-icon">▤</span> Stok bahan ajar
+        </button>
+        <button class="nav-item" :class="{ active: activeTab === 'orders' }" @click="activeTab = 'orders'">
+          <span class="nav-icon">＋</span> Pemesanan
+        </button>
+        <button class="nav-item" :class="{ active: activeTab === 'tracking' }" @click="activeTab = 'tracking'">
+          <span class="nav-icon">⌖</span> Tracking DO
+        </button>
+        <div class="sidebar-footer">
+          <span class="avatar">UT</span>
+          <span><strong>Universitas Terbuka</strong><small>Layanan bahan ajar</small></span>
+        </div>
+      </aside>
+
+      <main class="main-content">
+        <section v-if="activeTab === 'dashboard'">
+          <div class="page-heading">
+            <div>
+              <p class="eyebrow">PUSAT LAYANAN BAHAN AJAR</p>
+              <h1>Selamat datang<span class="heading-dot">.</span></h1>
+              <p class="muted">Pantau ketersediaan bahan ajar dan pengiriman pesanan Anda.</p>
+            </div>
+            <button class="button button-primary" @click="activeTab = 'orders'"><span>＋</span> Buat pesanan</button>
+          </div>
+
+          <div class="stats-grid">
+            <article class="stat-card">
+              <span class="stat-icon icon-blue">▤</span>
+              <div><p>Total bahan ajar</p><strong>{{ stok.length | number }}</strong><small>Judul dalam katalog</small></div>
+            </article>
+            <article class="stat-card">
+              <span class="stat-icon icon-green">◉</span>
+              <div><p>Lokasi layanan</p><strong>{{ upbjjList.length | number }}</strong><small>UPBJJ di seluruh Indonesia</small></div>
+            </article>
+            <article class="stat-card">
+              <span class="stat-icon icon-amber">!</span>
+              <div><p>Perlu restok</p><strong>{{ lowStockCount | number }}</strong><small>Stok mencapai batas minimum</small></div>
+            </article>
+            <article class="stat-card">
+              <span class="stat-icon icon-violet">⌖</span>
+              <div><p>Delivery order</p><strong>{{ trackingRecords.length | number }}</strong><small>Data pengiriman tercatat</small></div>
+            </article>
+          </div>
+
+          <section class="panel">
+            <div class="panel-heading">
+              <div><h2>Ringkasan stok</h2><p class="muted">Bahan ajar yang perlu diperhatikan</p></div>
+              <button class="text-button" @click="activeTab = 'stock'">Lihat semua <span>→</span></button>
+            </div>
+            <div v-if="lowStockItems.length" class="table-wrap">
+              <table>
+                <thead><tr><th>KODE / JUDUL</th><th>UPBJJ</th><th>LOKASI RAK</th><th>STOK</th><th>STATUS</th></tr></thead>
+                <tbody>
+                  <tr v-for="item in lowStockItems" :key="item.kode">
+                    <td><strong>{{ item.kode }}</strong><small class="cell-subtitle">{{ item.judul }}</small></td>
+                    <td>{{ item.upbjj }}</td><td>{{ item.lokasiRak }}</td>
+                    <td>{{ item.qty }} <span class="muted">/ {{ item.safety }} min.</span></td>
+                    <td><ba-status-badge :qty="item.qty" :safety="item.safety"></ba-status-badge></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div v-else class="empty-state">Semua stok bahan ajar berada di atas batas minimum.</div>
+          </section>
+
+          <section class="help-card">
+            <span class="help-icon">i</span>
+            <div><strong>Butuh bantuan?</strong><p>Gunakan menu Tracking DO untuk mencari status pengiriman berdasarkan nomor DO atau NIM.</p></div>
+            <button class="button button-light" @click="activeTab = 'tracking'">Cek pengiriman <span>→</span></button>
+          </section>
+        </section>
+
+        <section v-else-if="activeTab === 'stock'">
+          <ba-stock-table
+            :stocks="stok"
+            :upbjj-list="upbjjList"
+            :kategori-list="kategoriList"
+            @stock-create="createStock"
+            @stock-update="updateStock"
+            @stock-delete="deleteStock">
+          </ba-stock-table>
+        </section>
+
+        <section v-else-if="activeTab === 'orders'">
+          <ba-order-form
+            :paket-list="paketList"
+            :pengiriman-list="pengirimanList"
+            :stok="stok"
+            :message="orderMessage"
+            :message-type="orderMessageType"
+            @create-order="createOrder">
+          </ba-order-form>
+        </section>
+
+        <section v-else-if="activeTab === 'tracking'">
+          <ba-do-tracking
+            :records="trackingRecords"
+            :paket-list="paketList"
+            :focus-query="trackingFocus"
+            @add-progress="addProgress">
+          </ba-do-tracking>
+        </section>
+
+        <footer class="page-footer">SITTA <span>·</span> Layanan bahan ajar Universitas Terbuka</footer>
+      </main>
+    </div>
+  </div>
+
+  <div id="app-error" class="startup-error" hidden role="alert"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/vue@2.7.16/dist/vue.min.js"></script>
+  <script src="service/api.js"></script>
+  <script src="js/status-badge.js"></script>
+  <script src="js/app-modal.js"></script>
+  <script src="js/stock-table.js"></script>
+  <script src="js/order-form.js"></script>
+  <script src="js/do-tracking.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
